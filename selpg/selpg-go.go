@@ -16,7 +16,7 @@ Reference:
 
 ===================================================================*/
 
-package selpg;
+package main;
 
 import (
 	"fmt"
