@@ -107,18 +107,17 @@ func process_args(av []string, sp *sp_args) {
 
 	/* Get source filename */
 	if len(av) == 0 {
-		fmt.Fprintf(os.Stderr, "%s: you should enter the source file name", programName);
-		usage();
-		os.Exit(4);
+		sp.file_name = "";
+	} else {
+		tempFileName := av[0];
+		_, err := os.Stat(tempFileName);
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s: invalid file name -- input file \"%s\" does not exist!\n", programName, tempFileName);
+			usage();
+			os.Exit(5);
+		}
+		sp.file_name = tempFileName;
 	}
-	tempFileName := av[0];
-	_, err := os.Stat(tempFileName);
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s: invalid file name -- input file \"%s\" does not exist!\n", programName, tempFileName);
-		usage();
-		os.Exit(5);
-	}
-	sp.file_name = tempFileName;
 }
 
 /*================================= process_file() ================*/
@@ -126,19 +125,25 @@ func process_file(sp sp_args, flag_ bool) {
 	if flag_ {
 		flag.Usage();
 	}
-	file, err := os.Open(sp.file_name);
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s: Error with file \"%s\" opening!", programName, sp.file_name);
-		os.Exit(6);
+	var read io.Reader;
+	if sp.file_name == "" {
+		read = os.Stdin;
+	} else {
+		file, err := os.Open(sp.file_name);
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s: Error with file \"%s\" opening!", programName, sp.file_name);
+			os.Exit(6);
+		}
+		read = file;
+		defer file.Close();
 	}
-	defer file.Close();
 
 	var (
 		store, result []string
 		targetDelim byte
 		leng int
 	)
-	reader := bufio.NewReader(file);
+	reader := bufio.NewReader(read);
 	pageLength := 0;
 	if sp.page_type == true {
 		/* Command page type as \f delim a page */
